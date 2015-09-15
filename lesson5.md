@@ -174,7 +174,7 @@ var o2 = Object.create(oFrom);
 
 ## 4 Objektum-létrehozási minták
 ### 4.1 Egy objektum létrehozása
-- egyszerűen az objektumliterálla {}
+- egyszerűen az objektumliterállal {}
 - Object.create metódussal
 
 ### 4.2 Több objektum létrehozása – Gyár (Factory) minta
