@@ -346,25 +346,25 @@ kód #13:
 ```javascript
 var child = (function() {
     var publicMethods = {
-        getName: /*...*/,
-        setName: /*...*/
+        getName: function(){return this.name},
+        setName: function(name){this.name = name}
     };
     var publicData = {
-        name:        /*...*/,
-        dateOfBirth: /*...*/
+        name:        'Alap név',
+        dateOfBirth: {year: 1988, month: 5, day: 1}
     };
     return {
         create: function(props) {
             //Privát adattag
-            var secretNickName = /*...*/;
+            var secretNickName = 'Nick Secret';
             //Privilegizált metódusok
             var privilegedMethods = {
-                setSecretNickName: /*...*/,
-                getSecretNickName: /*...*/
+                setSecretNickName: function(){return this.secretNickName},
+                getSecretNickName: function(secretNickName){this.secretNickName = secretNickName}
             };
             return extendDeep(
                 Object.create(publicMethods),
-                privilegedMethods
+                privilegedMethods,
                 publicData,
                 props || {}
             );
@@ -376,19 +376,375 @@ var child = (function() {
 
 ## 5 Öröklési minták
 ### 5.1 Öröklés prototípuslánccal
+kód #14:
+```javascript
+var preschool = (function(_super) {
+    var methods = {
+        getSign: function getSign() {
+            return this.sign;
+        },
+        setSign: function setSign(sign) {
+            this.sign = sign;
+        },
+        getName: function getName() {
+            var name = this._super.getName.call(this);
+            return name + ' (preschool)';
+        }    
+    };
+    var publicMethods = extendShallow(
+        Object.create(_super.methods), 
+        methods,
+        {
+            _super: _super.methods
+        }
+    );
+    var publicData = {
+        sign: 'default sign'
+    };
+    return {
+        create: function(props) {
+            return extendDeep(
+                Object.create(publicMethods),
+                _super.create(),
+                publicData,
+                props || {}
+            );
+        },
+        methods: publicMethods
+    };
+})(child); // child a kód #13-ban 
+
+var p1 = preschool.create();
+var p2 = preschool.create();
+```
+
 ### 5.1 Öröklés bővítéssel – kompozíció
+- olyan, mint egy többszörös öröklés
+- hátránya, hogy minden függvény látszik a célobjektumban
+
+kód #15:
+```javascript
+var childProto = {
+    name:        /*...*/,
+    dateOfBirth: /*...*/,
+    getName:     /*...*/,
+    setName:     /*...*/
+};
+var preschoolProto = {
+    sign:    /*...*/,
+    getSign: /*...*/,
+    setSign: /*...*/
+};
+var preschool = {
+    create: function(props) {
+        return extendDeep({}, childProto, preschoolProto, props);
+    }
+};
+```
+
 ## 6 Magas szintű segédfüggvények objektumok létrehozására
+Egy gyárfüggvény készítéséhez a következő adatokat szükséges megadnunk:
+- a létrehozandó objektumok állapotterét képviselő publikus adatokat, amelyek az alapértelmezett értékeket is tartalmazzák;
+- a publikus metódusokat;
+- a privát adatokat és az azokat kezelő privilegizált metódusokat;
+- az esetleges szülő-objektumot.
+
 ### 6.1 Modellobjektumok
+kód #16:
+```javascript
+var childProto = {
+    methods: {
+        getName: function(){return this.name},
+        setName: function(name){this.name = name}
+    },
+    data: {
+        name: 'Alap név',
+        dateOfBirth: {year: 1988, month: 04, day: 20}
+    },
+    init: function () {
+        //Privát adattag
+        var secretNickName = 'Alap titkos név';
+        //Privilegizált metódusok
+        var privilegedMethods = {
+            setSecretNickName: function(){return this.secretNickName},
+            getSecretNickName: function(secretNickName){this.secretNickName = secretNickName}
+        };
+        return extendShallow(this, privilegedMethods);
+    }
+};
+var preschoolProto = {
+    methods: {
+        getSign: function(){return this.data.sign},
+        setSign: function(sign){this.data.sign = sign},
+        getName: function(){return this.name}
+    },
+    data: {
+        sign: 'car'
+    },
+    // child a kód #13-ban 
+    super: child
+};
+```
+
 ### 6.2 Prototípusláncot alkalmazó gyárfüggvények készítése
+
+kód #17:
+```javascript
+var createFactoryWithPrototype = function createFactoryWithPrototype(opts) {
+    //Paraméterek kiolvasása
+    var methods    = opts.methods || {};
+    var publicData = opts.data    || {};
+    var _super     = opts.super;
+    var init       = opts.init    || function () {};
+    var publicMethods = extendShallow(
+        Object.create(_super ? _super.methods : Object.prototype),
+        methods,
+        _super ? {
+            _super: _super.methods
+        } : {}
+    );
+    return {
+        create: function(props) {
+            var obj = extendDeep(
+                Object.create(publicMethods),
+                _super ? _super.create() : {},
+                publicData,
+                props || {}
+            );
+            return extendFunc(obj, init);
+        },
+        methods: publicMethods
+    };
+};
+
+//child gyárfüggvény előállítása
+var child = createFactoryWithPrototype(childProto);
+var c1 = child.create();
+var c2 = child.create();
+
+//preschool gyárfüggvény előállítása
+var preschool = createFactoryWithPrototype(preschoolProto);
+var p1 = preschool.create();
+var p2 = preschool.create();
+```
+
 ### 6.3 Kompozíciót alkalmazó gyárfüggvények készítése
+
+kód #18:
+```javascript
+var createFactoryWithComposition = function createFactoryWithComposition() {
+    var args = arguments;
+    var methods = {};
+    for (var i = 0; i < arguments.length; i++) {
+        extendDeep(methods, args[i].methods || {});
+    };
+    return {
+        create: function(props) {
+            var obj = Object.create(methods);
+            for (var i = 0; i < args.length; i++) {
+                extendDeep(obj, args[i].data || {});
+                extendFunc(obj, args[i].init || function () {});
+            };
+            return extendDeep(obj, props);
+        }
+    };
+};
+//child gyárfüggvény előállítása
+var child = createFactoryWithComposition(childProto);
+var c1 = child.create();
+//ld. a teszteket a prototípusláncnál
+//preschool gyárfüggvény előállítása
+var preschool = createFactoryWithComposition(childProto, preschoolProto);
+var p1 = preschool.create();
+```
+
 ## 7 Objektumok létrehozása klasszikus objektum-orientált szintaxissal
 ### 7.1 A konstruktorfüggvények
+- A new operátorral használandó függvényeket **konstruktorfüggvényeknek** hívjuk
+- A konstruktorfüggvények new operátorral történő meghívását **konstruktorhívási mintának** is nevezzük
+
+kód #19:
+```javascript
+//A konstruktorfüggvény
+var Child = function Child() {
+    this.name = 'Anonymous';
+}
+//Konstruktorhívási minta
+var c = new Child();
+```
+
 ### 7.2 A konstruktorhívás folyamatának háttere
+- Minden függvénynek automatikusan van egy prototype tulajdonsága, ami egy olyan objektumra mutat, aminek constructor tulajdonsága az adott függvényre hivatkozik
+
 ### 7.3 A konstruktorhívási minta alkalmazásának hátrányai
+- EcmaScript 5 előtt csak a függvények prototype tulajdonságán keresztül lehetett egy létrejövő objektum prototípus-objektumát beállítani. Az EcmaScript 5-ös Object.create() metódus azonban ezt feleslegessé teszi.
+- A konstruktorfüggvény további tulajdonsága az, hogy ha szerepel benne explicit return utasítás, akkor azzal konstruktorhívásuk azzal tér vissza, amit így megadtunk.
+- new operátor nélkül a this kulcsszó a globális objektumra(window) mutat
+- a this példánya-e az objektumunknak. ha nem, meghívjuk a new operátorral
+
+kód #20:
+```javascript
+var Child = function Child() {
+    if (!(this instanceof Child)) {
+        return new Child();
+    }
+    this.name = 'Anonymous';
+}
+```
+
 ### 7.4 Gyárfüggvények
+A konstruktorfüggvény objektumok létrehozására valók, és mint ilyenek gyárfüggvények is egyben.
+
+kód #21:
+```javascript
+var Child = function () {
+    this.name = 'Anonymous';
+    this.dateOfBirth = {
+        year: 1970,
+        month: 1,
+        day: 1
+    };
+    this.getName = function getName() {
+        return this.name;
+    };
+    this.setName = function setName(name) {
+        this.name = name;
+    };
+};
+```
+
 ### 7.5 Paraméteres gyárfüggvények
+Paraméterek megadhatók egyesével, de átadható egy konfigurációs objektum is. Ekkor a this-t először az alapértelmezett értékekkel bővítjük, majd a konfigurációs objektummal.
+
+kód #22:
+```javascript
+var Child = function (props) {
+    extendDeep(this, {
+        name:        /*...*/,
+        dateOfBirth: /*...*/,
+        getName:     /*...*/,
+        setName:     /*...*/
+    }, props || {});
+};
+```
+
 ### 7.6 Privát adattagok és privilegizált metódusok
+
+kód #23:
+```javascript
+var Child = function (props) {
+    //Privát adattag
+    var secretNickName = '';
+    extendDeep(this, {
+        name:        /*...*/,
+        dateOfBirth: /*...*/,
+        getName:     /*...*/,
+        setName:     /*...*/,
+        //Privilegizált metódusok
+        setSecretNickName: function (name) {
+            secretNickName = name;
+        },
+        getSecretNickName: function () {
+            return secretNickName;
+        }
+    }, props || {});
+};
+```
+
 ### 7.7 Metódusok hatékony tárolása
+- a prototípus-objektumban szokták tárolni
+
+kód #24:
+```javascript
+extendShallow(Child.prototype, {
+    getName:     /*...*/,
+    setName:     /*...*/
+});
+```
+
 ### 7.8 Becsomagolás „osztály-modulba”
+Gyakran látni olyan megoldást, amikor az előző példabeli létrehozást még egy további önkioldó függvénybe csomagolják. Ekkor a konstruktorfüggvényhez tartozó logika mind egy helyen van, és véletlenül sem szivárog a külső névterekbe. (Ezt a megoldást alkalmazza a TypeScript és a CoffeeScript fordító is.)
+
+kód #25:
+```javascript
+var Child = (function(){})();
+```
+
 ### 7.9 Öröklés
+
+kód #26:
+```javascript
+//Objektumhierarchiát kialakító függvény
+var inherit = function (C, P) {
+    var F = function () {};
+    F.prototype = P.prototype;
+    C.prototype = new F();
+    C.prototype._super = P.prototype;
+    C.prototype.constructor = C;
+};
+//Gyerekkonstruktor készítése
+var Preschool = (function (_super) {
+    var Preschool = function (props) {
+        extendFunc(this, _super);
+        //vagy paramétert is átadva:
+        //_super.call(this, props)
+        extendDeep(this, {
+            sign: 'default sign'
+        }, props || {});
+    };
+    inherit(Preschool, _super);
+    extendShallow(Preschool.prototype, {
+        getSign: function getSign() {
+            return this.sign;
+        },
+        setSign: function setSign(sign) {
+            this.sign = sign;
+        },
+        getName: function getName() {
+            var name = this._super.getName.call(this);
+            return name + ' (preschool)';
+        }
+    });
+    return Preschool;
+})(Child);
+```
+
 ## 8 EcmaScript 6 újdonságok az objektumkezelésben
+
+kód #27:
+```javascript
+class Child {
+    constructor(name, dateOfBirth) {
+        this._name = name;
+        this.dateOfBirth = 100;
+    }
+    say(something) {
+        return this.name + ' says: ' + something;
+    }
+    get name() { 
+        return this._name; 
+    }
+    set name(value) {
+        if (value === '') {
+            throw new Error('Name cannot be empty.');
+        }
+        this._name = value;
+    }
+}
+
+class Preschool extends Child {
+    constructor(name, dateOfBirth, sign) {
+        super(name, dateOfBirth);
+        this._sign = sign;
+    }
+    get sign() {
+        return this._sign; 
+    }
+    set sign(value) {
+        this._sign = value;
+    }
+    get name() { 
+        return super.name + ' (preschool)';
+    }
+}
+```
