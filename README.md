@@ -8,7 +8,7 @@ Jegyzetek:
 2. [Nyelvi elemek](https://github.com/ramee/javascript-anyag/blob/master/lesson2.md)
 3. [Objektumok, tömbök](https://github.com/ramee/javascript-anyag/blob/master/lesson3.md)
 4. [Függvények](https://github.com/ramee/javascript-anyag/blob/master/lesson4.md)
-5. [Objektum-orientált minták](https://github.com/ramee/javascript-anyag/blob/master/lesson5.md) // *folyamatban*
+5. [Objektum-orientált minták](https://github.com/ramee/javascript-anyag/blob/master/lesson5.md)
 6. Kódszervezés és modularitás
 7. A felhasználói felület kezelése
 8. Programozási minták
