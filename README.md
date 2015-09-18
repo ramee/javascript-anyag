@@ -10,7 +10,7 @@ Jegyzetek:
 4. [Függvények](https://github.com/ramee/javascript-anyag/blob/master/lesson4.md)
 5. [Objektum-orientált minták](https://github.com/ramee/javascript-anyag/blob/master/lesson5.md)
 6. [Kódszervezés és modularitás](https://github.com/ramee/javascript-anyag/blob/master/lesson6.md)
-7. A felhasználói felület kezelése
+7. [A felhasználói felület kezelése](https://github.com/ramee/javascript-anyag/blob/master/lesson6.md)
 8. Programozási minták
 9. Eseményvezérelt programozás
 10. Magas szintű programszervezés és alkalmazásarchitektúrák
