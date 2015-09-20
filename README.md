@@ -11,8 +11,8 @@ Jegyzetek:
 5. [Objektum-orientált minták](https://github.com/ramee/javascript-anyag/blob/master/lesson5.md)
 6. [Kódszervezés és modularitás](https://github.com/ramee/javascript-anyag/blob/master/lesson6.md)
 7. [A felhasználói felület kezelése](https://github.com/ramee/javascript-anyag/blob/master/lesson7.md)
-8. Programozási minták
-9. Eseményvezérelt programozás
+8. [Programozási minták](https://github.com/ramee/javascript-anyag/blob/master/lesson8.md)
+9. [Eseményvezérelt programozás](https://github.com/ramee/javascript-anyag/blob/master/lesson9.md)
 10. Magas szintű programszervezés és alkalmazásarchitektúrák
 11. Tesztvezérelt fejlesztés
 12. Modern programozási minták PHP-ban
