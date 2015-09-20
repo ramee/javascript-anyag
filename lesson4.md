@@ -342,6 +342,7 @@ heroGreeting.apply(superman, ['Kripton', "Hi there, I'm "]));
 - bind 
     - Az ES5 előtti időkben sokszor a this értékét egy _this, that vagy self nevű változóba mentettünk el, hogy a callback metódusokban is elérhető legyen az előző scope. A bind segítségével erre nincs szükség:
 
+kód #19:
 ```
 getIntroductionHTML: function() {
     var formattedName = (function(tag) {
@@ -359,3 +360,50 @@ Az ES6-ban bemutatkozó fat arrow operátor olyan függvényt hoz létre, melyne
 
 ## 4 Generátor-függvények (ES6)
 Hatékony eszközök olyan metódusok írására, melyek valamilyen állapotot őriznek és minden hívásra továbblépnek egy következő állapotba.
+
+> egyénileg iterálható objektum
+
+A JavaScriptben minden iterátor rendelkezik egy **next** metódussal, amelyet meghívva a hozzá kapcsolódó collection aktuális elemét kapjuk vissza, majd eggyel előrébb lépteti az adattagokra mutató referenciát. A visszaadott érték `{ value: 0, done: false }` formátumú, ahol a **value** a valós visszatérési értéket fogja tartalmazni, míg a **done** azt, hogy befejeződött-e az iterálás, végig értünk-e az adatokon.
+
+Az EcmaScript 6 bevezeti a generátorfüggvények fogalmát, amely egy egyszerűsített szintaxist takar az iterátorok létrehozására. Egy generátor bármilyen hagyományos JavaScript kódot tartalmazhat, csupán néhány ponton különbözik a többi függvénytől:
+- A function kulcsszó után ki kell tenni egy * jelet, hogy jelezzük generátorfüggvényről van szó.
+- A generátor futtatásakor egy iterátort kapunk visszatérésül, a továbbiakban ezzel foglalkozunk.
+- Az iterátortól a next utasítással kérhetjük el az első értéket.
+- A yield parancsra az iterátor-függvény futása leáll és a kulcsszó utáni kifejezés értékével visszatér. Ha a függvényen egy next metódust hívunk, akkor innen folytatódik a generátor futása, egészen addig amíg egy újabb yield utasításig nem érünk vagy egyébként is befejeződik a függvény.
+
+kód #20:
+```javascript
+var superHeroGenerator = function* () {
+    yield 'Batman';
+    yield 'Superman';
+};
+
+// manuálisan léptetve
+var getSuperHero = superHeroGenerator();
+assertEquals({ value: "Batman",   done: false }, getSuperHero.next());
+assertEquals({ value: "Superman", done: false }, getSuperHero.next());
+assertEquals({ value: undefined,  done: true  }, getSuperHero.next());
+
+// ciklusban
+for (var superhero of superHeroGenerator()) {
+    console.log(superhero);
+}
+
+```
+
+kód #21:
+```javascript
+var naturalNumberGenerator = function* () {
+    var n = 1;
+    while (true) {
+        yield n++;
+    }
+}
+for (var number of naturalNumberGenerator()) {
+    console.log(number);
+    if (number == 3) break;
+}
+// => 1
+// => 2
+// => 3
+```
