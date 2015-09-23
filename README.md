@@ -13,6 +13,6 @@ Jegyzetek:
 7. [A felhasználói felület kezelése](https://github.com/ramee/javascript-anyag/blob/master/lesson7.md)
 8. [Programozási minták](https://github.com/ramee/javascript-anyag/blob/master/lesson8.md)
 9. [Eseményvezérelt programozás](https://github.com/ramee/javascript-anyag/blob/master/lesson9.md)
-10. Magas szintű programszervezés és alkalmazásarchitektúrák
+10. [Magas szintű programszervezés és alkalmazásarchitektúrák](https://github.com/ramee/javascript-anyag/blob/master/lesson10.md)
 11. Tesztvezérelt fejlesztés
 12. Modern programozási minták PHP-ban

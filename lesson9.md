@@ -386,4 +386,97 @@ Az első **await**-hez érve a kód megvárja, hogy megnyíljon az ablak, vagyis
 ### 2.7 Funkcionális reaktív programozás
 #### 2.7.1 Reaktív programozás
 #### 2.7.2 Funkcionális reaktív programozás
+Használt: [Bacon.js](https://github.com/baconjs/bacon.js/tree/master)
+
+kód #19:
+```javascript
+var $input = $('input[name=textfield]'),
+    $label = $('.label');
+
+// hagyományos 
+$input.on('keyup', function(e) {
+    if (e.keyCode === 13) {
+        $label.text($input.val());
+    }
+});
+
+// FRP
+$input
+    .asEventStream('keyup')
+    .onValue(function(e) {
+        if (e.keyCode === 13) {
+            $label.text($input.val());
+        }
+    });
+
+// egérkattintásra is
+var $button = $('button');
+
+var enterStream = $input
+        .asEventStream('keyup')
+        .filter(function(e) { return e.keyCode === 13; });
+
+var clickStream = $button
+        .asEventStream('click');
+
+enterStream.merge(clickStream).onValue(function() {
+    $label.text($input.val());
+});
+```
+
+- a billentyűleütést egy úgynevezett Event Stream-é alakítjuk
+- az asEventStream metódus egy jQuery eseményből képes létrehozni egy Event Stream-et, az onValue pedig egy esemény kiváltódásakor a folyamba került értékkel hívja meg a callback-jét, jelen esetben ez a billentyű-esemény event objektuma.
+- Property: ez egy egyszerű, állandó állapottal rendelkező értéknek tekinthető, melynek van valamilyen kezdőértéke, majd folyamatosan követi a folyamot
+
+kód #20:
+```javascript
+var keyStream = $input.asEventStream('keyup'),
+    enterStream = keyStream
+        .filter(function(e) { return e.keyCode === 13; }),
+    clickStream = $button.asEventStream('click'),
+    showStream = enterStream.merge(clickStream),
+    isEmpty = keyStream
+        .map(function() { return $input.val().trim() === ''; })
+        .toProperty(true);
+
+showStream.onValue(function() {
+    $label.text($input.val());
+});
+
+isEmpty.onValue(function(state) {
+    $button.attr('disabled', state);
+});
+
+// VAGY egyenesen a gombra kötjük
+keyStream
+    .map(isEmpty)
+    .toProperty(true)
+    .assign($button, 'attr', 'disabled');
+```
+
+- Az újonnan megjelent isEmpty egy olyan Property, mely igaz kezdőértékkel rendelkezik, azonban minden keyStream-beli eseményre (vagyis billentyűlenyomásra) ellenőrzi, hogy üres-e még a szöveges mező — ha nem, akkor false-ra állítja a saját állapotát
+
 #### 2.7.3 Funkcionális reaktív programozás a szerver oldalon
+
+Node.js és Bacon.js
+
+kód #21:
+```javascript
+var getUsernames = function(content) {
+        return content.split('\r\n');
+    },
+    filterValidUsernames = function(usernames) {
+        return usernames.filter(function(username) {
+            return Boolean(username.trim());
+        });
+    },
+    fixUsernamesIn = function(file) {
+        var fileContent = Bacon.fromNodeCallback(fs.readFile, file),
+            usernames = fileContent.map(getUsernames),
+            validUsernames = usernames.map(filterValidUsernames);
+        validUsernames.onValue(function(usernames) {
+            fs.writeFile(file, usernames.join('\r\n'));
+        });
+    };
+fixUsernamesIn('usernames.csv');
+```
